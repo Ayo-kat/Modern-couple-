@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>EverBlossom · Couple Memory Timeline</title>
+    <!-- Google Fonts & Tailwind + Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- React & ReactDOM & Babel -->
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        /* floating hearts animation */
+        .heart-float {
+            position: fixed;
+            bottom: -20px;
+            pointer-events: none;
+            font-size: 1.4rem;
+            z-index: 5;
+            animation: floatUpLove 7s linear forwards;
+            opacity: 0.7;
+        }
+        @keyframes floatUpLove {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(25deg);
+                opacity: 0;
+            }
+        }
+        /* glassmorphism strong */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .glass-card-dark {
+            background: rgba(30, 20, 35, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+        .romantic-gradient {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 50%, #fad0c4 100%);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .transition-smooth {
+            transition: all 0.2s ease-in-out;
+        }
+        button, .tab-button {
+            transition: all 0.2s ease;
+        }
+        .theme-rose {
+            --primary-light: #ffb7c5;
+            --primary-dark: #ff6f91;
+        }
+        body {
+            background: radial-gradient(circle at 10% 30%, #ffe6f0, #ffd9e6);
+            background-attachment: fixed;
+        }
+        /* custom scroll */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #ffe2f0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff88aa;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="antialiased m-0 p-0 overflow-x-hidden">
+    <div id="root" class="relative min-h-screen w-full"></div>
+
+    <script type="text/babel">
+        // ---------- HELPER FUNCTIONS (localStorage) ----------
+        const STORAGE_USERS = "everblossom_users";
+        const getCoupleStorageKey = (coupleId) => `couple_data_${coupleId}`;
+
+        // default demo couple data for new signups
+        const getDefaultCoupleData = (startDateValue = "2023-05-20") => ({
+            startDate: startDateValue,
+            coupleName: "My Love & Me",
+            theme: "rose",   // rose, lavender, peach, mint
+            timeline: [
+                { id: "t1", title: "First date ✨", description: "Sunset picnic, laughed until moonrise", date: "2023-05-20", type: "milestone", imageUrl: "https://images.unsplash.com/photo-1516589091380-5d8e87d6997e?w=200&h=150&fit=crop" },
+                { id: "t2", title: "Said 'I love you' 💕", description: "Under the stars, it felt like magic", date: "2023-07-12", type: "milestone", imageUrl: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=200&h=150&fit=crop" },
+                { id: "t3", title: "Moved in together 🏡", description: "Our cozy nest full of dreams", date: "2024-01-10", type: "milestone", imageUrl: "https://images.unsplash.com/photo-1560448204-603b3fc33ddc?w=200&h=150&fit=crop" }
+            ],
+            gallery: [
+                { id: "g1", imageUrl: "https://images.unsplash.com/photo-1516589091380-5d8e87d6997e?w=400&h=300&fit=crop", caption: "First adventure together", date: "2023-05-20" },
+                { id: "g2", imageUrl: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=400&h=300&fit=crop", caption: "Starry night love", date: "2023-07-12" },
+                { id: "g3", imageUrl: "https://images.unsplash.com/photo-1560448204-603b3fc33ddc?w=400&h=300&fit=crop", caption: "Home sweet home", date: "2024-01-10" }
+            ],
+            loveNotes: [
+                { id: "n1", message: "Every day with you feels like a dream. I'm so lucky.", date: "2025-02-10", author: "You" },
+                { id: "n2", message: "Thank you for being my home. Forever and always ❤️", date: "2025-02-14", author: "Me" }
+            ],
+            goals: [
+                { id: "goal1", title: "Travel to Japan together", targetDate: "2026-03-01", completed: false, progress: 30 },
+                { id: "goal2", title: "Learn to cook 5 romantic meals", targetDate: "2025-08-01", completed: false, progress: 60 },
+                { id: "goal3", title: "Weekly dance night", targetDate: "", completed: true, progress: 100 }
+            ],
+            currentMood: { moodLabel: "Adoring", moodEmoji: "🥰", statusText: "Feeling endlessly grateful 💖", lastUpdated: new Date().toISOString() },
+            statusHistory: []
+        });
+
+        // init users
+        const initUsers = () => {
+            if (!localStorage.getItem(STORAGE_USERS)) {
+                const defaultUsers = [
+                    { email: "couple@everlove.com", password: "love2025", coupleId: "couple@everlove.com" }
+                ];
+                localStorage.setItem(STORAGE_USERS, JSON.stringify(defaultUsers));
+                // prefill their couple data
+                const defaultData = getDefaultCoupleData("2023-05-20");
+                localStorage.setItem(getCoupleStorageKey("couple@everlove.com"), JSON.stringify(defaultData));
+            }
+        };
+        initUsers();
+
+        // ---------- AUTH CONTEXT / STATE ----------
+        const AuthContext = React.createContext(null);
+
+        // Floating heart component (generator)
+        const FloatingHearts = () => {
+            React.useEffect(() => {
+                const createHeart = () => {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart-float';
+                    heart.innerHTML = ['❤️', '🩷', '❤️‍🩹', '💗', '💖', '🌸', '🌹'][Math.floor(Math.random() * 7)];
+                    heart.style.left = Math.random() * 100 + '%';
+                    heart.style.fontSize = (Math.random() * 1.5 + 0.8) + 'rem';
+                    heart.style.animationDuration = (Math.random() * 4 + 5) + 's';
+                    heart.style.opacity = Math.random() * 0.6 + 0.3;
+                    document.body.appendChild(heart);
+                    setTimeout(() => heart.remove(), 7000);
+                };
+                const interval = setInterval(createHeart, 800);
+                return () => clearInterval(interval);
+            }, []);
+            return null;
+        };
+
+        // ----- Login / Signup Component -----
+        const AuthScreen = ({ onLogin }) => {
+            const [isLogin, setIsLogin] = React.useState(true);
+            const [email, setEmail] = React.useState("");
+            const [password, setPassword] = React.useState("");
+            const [error, setError] = React.useState("");
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setError("");
+                const users = JSON.parse(localStorage.getItem(STORAGE_USERS) || "[]");
+                if (isLogin) {
+                    const user = users.find(u => u.email === email && u.password === password);
+                    if (user) {
+                        onLogin(user);
+                    } else {
+                        setError("Incorrect email or password. Try couple@everlove.com / love2025");
+                    }
+                } else {
+                    // signup
+                    if (users.find(u => u.email === email)) {
+                        setError("Email already exists. Please login.");
+                        return;
+                    }
+                    const newUser = { email, password, coupleId: email };
+                    users.push(newUser);
+                    localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+                    // fresh empty couple data
+                    const freshData = getDefaultCoupleData(new Date().toISOString().slice(0,10));
+                    localStorage.setItem(getCoupleStorageKey(email), JSON.stringify(freshData));
+                    onLogin(newUser);
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-6 relative z-10">
+                    <div className="w-full max-w-md glass-card p-8 rounded-3xl shadow-2xl bg-white/40 backdrop-blur-xl">
+                        <div className="text-center mb-6">
+                            <i className="fas fa-heart text-5xl text-pink-500 animate-pulse"></i>
+                            <h1 className="text-3xl font-bold mt-2 text-rose-800">EverBlossom</h1>
+                            <p className="text-rose-600/80 text-sm">where love stories bloom</p>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-rose-800">Email</label>
+                                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required className="w-full p-3 rounded-2xl border border-pink-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-pink-400" placeholder="your@love.com" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-rose-800">Password</label>
+                                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required className="w-full p-3 rounded-2xl border border-pink-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-pink-400" />
+                            </div>
+                            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                            <button type="submit" className="w-full bg-gradient-to-r from-rose-400 to-pink-500 text-white font-semibold py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all">{isLogin ? "Login to your heart" : "Start new journey"}</button>
+                            <p className="text-center text-sm text-rose-700 cursor-pointer" onClick={()=>{setIsLogin(!isLogin); setError("");}}>{isLogin ? "New couple? Create account ✨" : "Already together? Sign in"}</p>
+                        </form>
+                        <div className="mt-4 text-center text-xs text-rose-500">Demo: couple@everlove.com / love2025</div>
+                    </div>
+                    <FloatingHearts />
+                </div>
+            );
+        };
+
+        // ---------- MAIN COUPLE APP ----------
+        const CoupleApp = ({ user, onLogout }) => {
+            const [coupleData, setCoupleData] = React.useState(null);
+            const [activeTab, setActiveTab] = React.useState("timeline"); // timeline, gallery, notes, goals, moods
+            const [showAddModal, setShowAddModal] = React.useState({ type: null, show: false });
+            const [newEntry, setNewEntry] = React.useState({});
+            
+            // Load couple data
+            const loadData = () => {
+                const stored = localStorage.getItem(getCoupleStorageKey(user.coupleId));
+                if (stored) setCoupleData(JSON.parse(stored));
+                else setCoupleData(getDefaultCoupleData());
+            };
+
+            const saveData = (newData) => {
+                setCoupleData(newData);
+                localStorage.setItem(getCoupleStorageKey(user.coupleId), JSON.stringify(newData));
+            };
+
+            React.useEffect(() => {
+                loadData();
+            }, [user]);
+
+            if (!coupleData) return <div className="p-8 text-center">Loading your love story...</div>;
+
+            // helpers
+            const addTimeline = (entry) => {
+                const newTimeline = [{ id: Date.now().toString(), ...entry }, ...coupleData.timeline];
+                saveData({ ...coupleData, timeline: newTimeline });
+            };
+            const addGallery = (item) => {
+                const newGallery = [{ id: Date.now().toString(), ...item }, ...coupleData.gallery];
+                saveData({ ...coupleData, gallery: newGallery });
+            };
+            const addLoveNote = (note) => {
+                const newNotes = [{ id: Date.now().toString(), ...note, date: new Date().toISOString().slice(0,10) }, ...coupleData.loveNotes];
+                saveData({ ...coupleData, loveNotes: newNotes });
+            };
+            const addGoal = (goal) => {
+                const newGoals = [...coupleData.goals, { id: Date.now().toString(), completed: false, progress: 0, ...goal }];
+                saveData({ ...coupleData, goals: newGoals });
+            };
+            const toggleGoal = (goalId) => {
+                const goals = coupleData.goals.map(g => g.id === goalId ? { ...g, completed: !g.completed, progress: !g.completed ? 100 : 0 } : g);
+                saveData({ ...coupleData, goals });
+            };
+            const updateMood = (moodLabel, moodEmoji, statusText) => {
+                const currentMood = { moodLabel, moodEmoji, statusText, lastUpdated: new Date().toISOString() };
+                saveData({ ...coupleData, currentMood });
+            };
+            const setTheme = (theme) => saveData({ ...coupleData, theme });
+            const updateStartDate = (date) => saveData({ ...coupleData, startDate: date });
+            
+            // anniversary countdown logic
+            const getAnniversaryInfo = () => {
+                const start = new Date(coupleData.startDate);
+                const today = new Date();
+                let nextAnniv = new Date(today.getFullYear(), start.getMonth(), start.getDate());
+                if (nextAnniv < today) nextAnniv.setFullYear(today.getFullYear() + 1);
+                const diffDays = Math.ceil((nextAnniv - today) / (1000 * 60 * 60 * 24));
+                const yearsTogether = today.getFullYear() - start.getFullYear();
+                return { diffDays, nextAnniv: nextAnniv.toDateString(), yearsTogether: yearsTogether + (today >= new Date(today.getFullYear(), start.getMonth(), start.getDate()) ? 0 : -1) };
+            };
+            const anniv = getAnniversaryInfo();
+
+            // theme styling
+            const themeMap = {
+                rose: "from-rose-100/60 to-pink-100/50",
+                lavender: "from-purple-100/50 to-indigo-100/50",
+                peach: "from-orange-100/50 to-amber-100/50",
+                mint: "from-emerald-100/50 to-teal-100/50"
+            };
+            const bgGradient = themeMap[coupleData.theme] || themeMap.rose;
+
+            // form modals
+            const AddModal = () => {
+                const { type, show } = showAddModal;
+                if (!show) return null;
+                const [title, setTitle] = React.useState("");
+                const [desc, setDesc] = React.useState("");
+                const [date, setDate] = React.useState(new Date().toISOString().slice(0,10));
+                const [imageUrl, setImageUrl] = React.useState("");
+                const [caption, setCaption] = React.useState("");
+                const [message, setMessage] = React.useState("");
+                const [goalTitle, setGoalTitle] = React.useState("");
+                const [targetDate, setTargetDate] = React.useState("");
+
+                const onSubmit = () => {
+                    if (type === "timeline") addTimeline({ title, description: desc, date, imageUrl: imageUrl || "https://images.unsplash.com/photo-1516589091380-5d8e87d6997e?w=200&h=150&fit=crop", type: "memory" });
+                    if (type === "gallery") addGallery({ imageUrl: imageUrl || "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=400&h=300&fit=crop", caption: caption || "Our precious moment", date });
+                    if (type === "note") addLoveNote({ message: message || "Thinking of you 💌", author: "Partner" });
+                    if (type === "goal") addGoal({ title: goalTitle, targetDate, completed: false, progress: 0 });
+                    setShowAddModal({ type: null, show: false });
+                };
+                return (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={()=>setShowAddModal({type:null,show:false})}>
+                        <div className="glass-card bg-white/90 w-full max-w-md p-6 rounded-3xl" onClick={e=>e.stopPropagation()}>
+                            <h3 className="text-2xl font-bold text-rose-700 mb-3">Add new {type==='timeline'?'milestone':type==='gallery'?'photo':type==='note'?'love note':'couple goal'}</h3>
+                            {type === "timeline" && <><input placeholder="Title" className="w-full p-3 rounded-xl border my-2" value={title} onChange={e=>setTitle(e.target.value)}/><textarea placeholder="Description" className="w-full p-3 rounded-xl border my-2" value={desc} onChange={e=>setDesc(e.target.value)}/><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full p-3 rounded-xl border my-2"/><input placeholder="Image URL (optional)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} className="w-full p-3 rounded-xl border my-2"/></>}
+                            {type === "gallery" && <><input placeholder="Image URL" className="w-full p-3 rounded-xl border my-2" value={imageUrl} onChange={e=>setImageUrl(e.target.value)}/><input placeholder="Caption" value={caption} onChange={e=>setCaption(e.target.value)} className="w-full p-3 rounded-xl border my-2"/><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="w-full p-3 rounded-xl border my-2"/></>}
+                            {type === "note" && <><textarea placeholder="Your love message..." rows="3" className="w-full p-3 rounded-xl border my-2" value={message} onChange={e=>setMessage(e.target.value)}/></>}
+                            {type === "goal" && <><input placeholder="Goal (e.g., Trip to Paris)" className="w-full p-3 rounded-xl border my-2" value={goalTitle} onChange={e=>setGoalTitle(e.target.value)}/><input placeholder="Target date (optional)" type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)} className="w-full p-3 rounded-xl border my-2"/></>}
+                            <div className="flex gap-3 mt-4"><button onClick={onSubmit} className="bg-rose-500 text-white px-5 py-2 rounded-full flex-1">Add ✨</button><button onClick={()=>setShowAddModal({type:null,show:false})} className="bg-gray-300 px-5 py-2 rounded-full">Cancel</button></div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Timeline tab
+            const TimelineTab = () => (
+                <div className="space-y-4 pb-24">
+                    {coupleData.timeline.map(item => (
+                        <div key={item.id} className="glass-card p-4 rounded-2xl flex gap-3 items-start">
+                            <div className="w-12 h-12 rounded-full bg-pink-200 flex items-center justify-center text-xl shrink-0">📅</div>
+                            <div className="flex-1"><h3 className="font-bold text-rose-800">{item.title}</h3><p className="text-sm text-rose-700">{item.description}</p><span className="text-xs text-gray-500">{item.date}</span></div>
+                            {item.imageUrl && <img src={item.imageUrl} className="w-14 h-14 rounded-xl object-cover" />}
+                        </div>
+                    ))}
+                </div>
+            );
+            // Gallery grid
+            const GalleryTab = () => (
+                <div className="grid grid-cols-2 gap-3 pb-24">
+                    {coupleData.gallery.map(photo => (
+                        <div key={photo.id} className="glass-card p-2 rounded-xl overflow-hidden"><img src={photo.imageUrl} className="w-full h-32 object-cover rounded-lg" /><p className="text-xs text-center mt-1 text-rose-700">{photo.caption}</p><p className="text-[10px] text-center text-gray-500">{photo.date}</p></div>
+                    ))}
+                </div>
+            );
+            // Love notes
+            const NotesTab = () => (
+                <div className="space-y-4 pb-24">
+                    {coupleData.loveNotes.map(note => (<div key={note.id} className="glass-card p-5 rounded-2xl relative"><i className="fas fa-heart text-pink-400 absolute right-4 top-3"></i><p className="italic text-rose-800">"{note.message}"</p><div className="flex justify-between mt-3 text-xs text-rose-500"><span>❤️ {note.author}</span><span>{note.date}</span></div></div>))}
+                </div>
+            );
+            // goals
+            const GoalsTab = () => (
+                <div className="space-y-4 pb-24">
+                    {coupleData.goals.map(goal => (<div key={goal.id} className="glass-card p-4 rounded-2xl"><div className="flex justify-between items-center"><span className="font-semibold text-rose-800">{goal.title}</span><input type="checkbox" checked={goal.completed} onChange={()=>toggleGoal(goal.id)} className="w-5 h-5 accent-pink-500"/></div>{!goal.completed && <div className="w-full bg-gray-200 rounded-full h-2 mt-2"><div className="bg-rose-400 h-2 rounded-full" style={{width:`${goal.progress}%`}}></div></div>}<p className="text-xs text-gray-500 mt-1">{goal.targetDate ? `🎯 by ${goal.targetDate}` : 'ongoing'}</p></div>))}
+                </div>
+            );
+            // Mood & Theme Settings
+            const MoodThemeTab = () => {
+                const [moodChoice, setMoodChoice] = React.useState(coupleData.currentMood.moodLabel);
+                const [statusMsg, setStatusMsg] = React.useState(coupleData.currentMood.statusText);
+                const moods = [{label:"In Love", emoji:"😍"},{label:"Adoring",emoji:"🥰"},{label:"Peaceful",emoji:"😌"},{label:"Playful",emoji:"😜"},{label:"Grateful",emoji:"🙏"}];
+                return (
+                    <div className="space-y-8 pb-24">
+                        <div className="glass-card p-5 rounded-2xl"><h3 className="font-bold text-rose-700 flex items-center gap-2"><i className="fas fa-smile-wink"></i> Current Mood</h3><div className="flex gap-3 my-3 flex-wrap">{moods.map(m=> (<button key={m.label} onClick={()=>setMoodChoice(m.label)} className={`px-4 py-2 rounded-full ${moodChoice===m.label ? 'bg-rose-500 text-white' : 'bg-white/50'}`}>{m.emoji} {m.label}</button>))}</div><textarea className="w-full p-3 rounded-xl border bg-white/70" rows="2" value={statusMsg} onChange={e=>setStatusMsg(e.target.value)} placeholder="Share your heart..."></textarea><button onClick={()=>{const chosen = moods.find(m=>m.label===moodChoice)||moods[0]; updateMood(moodChoice,chosen.emoji,statusMsg);}} className="mt-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white px-5 py-2 rounded-full w-full">Update Vibe 💕</button><div className="mt-4 text-center text-pink-600 bg-white/40 rounded-xl p-2">{coupleData.currentMood.moodEmoji} {coupleData.currentMood.moodLabel} — {coupleData.currentMood.statusText}</div></div>
+                        <div className="glass-card p-5 rounded-2xl"><h3 className="font-bold text-rose-700"><i className="fas fa-palette"></i> Personalized Theme</h3><div className="flex gap-3 mt-2"><button onClick={()=>setTheme('rose')} className="w-10 h-10 rounded-full bg-pink-400 border-2 border-white"></button><button onClick={()=>setTheme('lavender')} className="w-10 h-10 rounded-full bg-purple-400"></button><button onClick={()=>setTheme('peach')} className="w-10 h-10 rounded-full bg-orange-300"></button><button onClick={()=>setTheme('mint')} className="w-10 h-10 rounded-full bg-teal-300"></button></div></div>
+                        <div className="glass-card p-5 rounded-2xl"><h3 className="font-bold text-rose-700"><i className="fas fa-calendar-alt"></i> Anniversary & Start Date</h3><input type="date" value={coupleData.startDate} onChange={e=>updateStartDate(e.target.value)} className="p-2 rounded-xl border bg-white/80"/><p className="mt-2 text-sm">💗 {anniv.yearsTogether} years together · Next anniversary in {anniv.diffDays} days</p></div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className={`min-h-screen bg-gradient-to-br ${bgGradient} pb-6 relative z-10`}>
+                    <FloatingHearts />
+                    {/* Header + Countdown */}
+                    <div className="sticky top-0 z-20 glass-card rounded-b-3xl p-5 shadow-md backdrop-blur-md">
+                        <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-rose-800"><i className="fas fa-heartbeat text-pink-500"></i> EverBlossom</h2><button onClick={onLogout} className="text-sm bg-white/40 px-3 py-1 rounded-full">Logout <i className="fas fa-sign-out-alt"></i></button></div>
+                        <div className="mt-2 flex justify-between items-end"><div><p className="text-rose-700 text-sm">❤️ {coupleData.coupleName}</p><p className="text-xs text-rose-600">Since {coupleData.startDate}</p></div><div className="text-right"><p className="text-2xl font-bold text-rose-600">{anniv.diffDays}</p><p className="text-xs uppercase">days until anniversary</p></div></div>
+                        <div className="mt-2 w-full bg-white/50 h-2 rounded-full overflow-hidden"><div className="bg-rose-400 h-full rounded-full" style={{width:`${Math.min(100, (365-anniv.diffDays)/365*100)}%`}}></div></div>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex sticky top-[108px] z-20 justify-around bg-white/30 backdrop-blur-md mx-4 rounded-2xl p-1 mt-3">
+                        {["timeline","gallery","notes","goals","mood"].map(tab => (<button key={tab} onClick={()=>setActiveTab(tab)} className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${activeTab===tab ? 'bg-rose-500 text-white shadow-md' : 'text-rose-700'}`}>{tab==='timeline'?'📖 Timeline':tab==='gallery'?'🖼️ Gallery':tab==='notes'?'💌 Notes':tab==='goals'?'🎯 Goals':'✨ Mood & Theme'}</button>))}
+                    </div>
+
+                    <div className="px-5 mt-6">
+                        {activeTab === "timeline" && <><div className="flex justify-end mb-2"><button onClick={()=>setShowAddModal({type:"timeline",show:true})} className="bg-rose-400/80 text-white px-3 py-1 rounded-full text-sm shadow"><i className="fas fa-plus"></i> Memory</button></div><TimelineTab/></>}
+                        {activeTab === "gallery" && <><div className="flex justify-end mb-2"><button onClick={()=>setShowAddModal({type:"gallery",show:true})} className="bg-rose-400/80 text-white px-3 py-1 rounded-full text-sm"><i className="fas fa-camera"></i> Add Photo</button></div><GalleryTab/></>}
+                        {activeTab === "notes" && <><div className="flex justify-end mb-2"><button onClick={()=>setShowAddModal({type:"note",show:true})} className="bg-rose-400/80 text-white px-3 py-1 rounded-full text-sm"><i className="fas fa-pen-fancy"></i> Write Note</button></div><NotesTab/></>}
+                        {activeTab === "goals" && <><div className="flex justify-end mb-2"><button onClick={()=>setShowAddModal({type:"goal",show:true})} className="bg-rose-400/80 text-white px-3 py-1 rounded-full text-sm"><i className="fas fa-flag-checkered"></i> New Goal</button></div><GoalsTab/></>}
+                        {activeTab === "mood" && <MoodThemeTab/>}
+                    </div>
+                    <AddModal />
+                </div>
+            );
+        };
+
+        // Root app routing
+        const App = () => {
+            const [user, setUser] = React.useState(null);
+            if (!user) return <AuthScreen onLogin={setUser} />;
+            return <CoupleApp user={user} onLogout={()=>setUser(null)} />;
+        };
+
+        ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+</body>
+</html>
